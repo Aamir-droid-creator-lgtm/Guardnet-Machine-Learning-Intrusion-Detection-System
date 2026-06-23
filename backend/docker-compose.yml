@@ -1,0 +1,81 @@
+# ==============================================================================
+# GUARDNET - DOCKER COMPOSE FOR HYBRID IDS DEPLOYMENT
+# Meets PDF requirements for scalability & cloud deployment
+# ==============================================================================
+version: '3.8'
+
+services:
+  guardnet-app:
+    build: .
+    container_name: guardnet-detector
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - MODEL_PATH=/app/models/rf_model.pkl
+    depends_on:
+      - elasticsearch
+      - logstash
+    networks:
+      - guardnet-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ELK Stack for PDF compliance
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: guardnet-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - guardnet-network
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: guardnet-logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logs:/app/logs
+    ports:
+      - "50000:50000/tcp"
+    depends_on:
+      - elasticsearch
+    networks:
+      - guardnet-network
+    restart: unless-stopped
+    command: logstash -f /usr/share/logstash/pipeline/logstash.conf
+
+  # Optional: Zeek for hybrid detection
+  zeek:
+    image: zeek/zeek:latest
+    container_name: guardnet-zeek
+    networks:
+      - guardnet-network
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    command: zeek -C -i eth0
+    restart: unless-stopped
+
+volumes:
+  es-data:
+
+networks:
+  guardnet-network:
+    driver: bridge
