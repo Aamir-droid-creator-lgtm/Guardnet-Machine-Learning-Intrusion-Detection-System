@@ -34,6 +34,12 @@ COLUMNS = [
     "dst_host_srv_rerror_rate", "label", "difficulty",
 ]
 CATEGORICAL = ["protocol_type", "service", "flag"]
+# Must match SKEWED in model_trainer.py (same log1p transform at inference time).
+SKEWED = [
+    "duration", "src_bytes", "dst_bytes", "hot", "num_compromised", "num_root",
+    "num_file_creations", "count", "srv_count", "dst_host_count",
+    "dst_host_srv_count",
+]
 
 
 def load_artifacts():
@@ -53,6 +59,9 @@ def preprocess(df_raw, scaler, feature_columns):
     for col in ("label", "difficulty"):
         if col in X.columns:
             X = X.drop(columns=[col])
+    for col in SKEWED:
+        if col in X.columns:
+            X[col] = np.log1p(X[col].clip(lower=0))
     X = pd.get_dummies(X, columns=CATEGORICAL)
     # Align columns to training schema: add missing, drop unseen, fix order.
     X = X.reindex(columns=feature_columns, fill_value=0)

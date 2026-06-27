@@ -18,21 +18,22 @@ during training):
 
 | Metric     | Score  |
 | :--------- | :----- |
-| Accuracy   | 79.9%  |
-| Precision  | 92.6%  |
-| Recall     | 70.4%  |
-| F1-score   | 80.0%  |
+| Accuracy   | 84.2%  |
+| Precision  | 97.3%  |
+| Recall     | 74.4%  |
+| F1-score   | 84.3%  |
 
 **Confusion matrix** (rows = actual, cols = predicted):
 
 |              | Pred BENIGN | Pred ATTACK |
 | :----------- | :---------- | :---------- |
-| **BENIGN**   | 8,985       | 726         |
-| **ATTACK**   | 3,803       | 9,030       |
+| **BENIGN**   | 9,444       | 267         |
+| **ATTACK**   | 3,289       | 9,544       |
 
-> These are real, reproducible numbers — run `python scripts/model_trainer.py` to
-> regenerate them. ~80% on KDDTest+ is a strong, honest result: that test set
-> deliberately contains attack types absent from training to measure generalization.
+> These are real, reproducible numbers (training is seeded) — run
+> `python scripts/model_trainer.py` to regenerate them. 84% on KDDTest+ is a
+> strong, honest result: that test set deliberately contains attack types absent
+> from training to measure generalization.
 
 ---
 
@@ -55,7 +56,8 @@ during training):
 ```
 Network Traffic (NSL-KDD records)
         ↓
-Preprocessing  (clean → one-hot encode protocol/service/flag → standard-scale)
+Preprocessing  (log1p skewed byte/count features → one-hot encode
+                protocol/service/flag → standard-scale)
         ↓
 CNN Layers     (Conv1D → BatchNorm → MaxPool — spatial feature extraction)
         ↓

@@ -14,10 +14,19 @@ Evaluation on the held-out KDDTest+ split is reported at the end.
 """
 
 import os
+import random
 import numpy as np
 import pandas as pd
 import joblib
 import tensorflow as tf
+
+# Fixed seeds so training is reproducible and the reported metrics match the
+# saved model artifact.
+SEED = 42
+os.environ["PYTHONHASHSEED"] = str(SEED)
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import (
     Dense, Input, Dropout, LSTM, Reshape, Conv1D, MaxPooling1D, BatchNormalization
@@ -56,6 +65,14 @@ COLUMNS = [
 ]
 CATEGORICAL = ["protocol_type", "service", "flag"]
 
+# Heavily right-skewed count/byte features. A log1p transform compresses their
+# huge dynamic range so scaling is meaningful - a standard NSL-KDD technique.
+SKEWED = [
+    "duration", "src_bytes", "dst_bytes", "hot", "num_compromised", "num_root",
+    "num_file_creations", "count", "srv_count", "dst_host_count",
+    "dst_host_srv_count",
+]
+
 
 def load_dataset(path):
     df = pd.read_csv(path, header=None, names=COLUMNS)
@@ -63,6 +80,8 @@ def load_dataset(path):
     # Binary target: anything that is not 'normal' is an attack.
     y = (df["label"] != "normal").astype(int).values
     X = df.drop(columns=["label"])
+    for col in SKEWED:
+        X[col] = np.log1p(X[col].clip(lower=0))
     return X, y
 
 
