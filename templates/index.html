@@ -85,7 +85,7 @@
 
             <div class="table-card">
                 <table>
-                    <thead><tr><th>Timestamp</th><th>Source IP</th><th>Proto / Entropy</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Timestamp</th><th>Source IP</th><th>Proto / Threat %</th><th>Status</th></tr></thead>
                     <tbody id="logBody">
                         <tr><td colspan="4" style="text-align:center; color:#8b949e;">Awaiting analysis start...</td></tr>
                     </tbody>
@@ -111,7 +111,7 @@
         const threatChart = new Chart(ctx, {
             type: 'line',
             data: { labels: [], datasets: [{ 
-                label: 'Entropy Level', 
+                label: 'Threat Score %',
                 data: [], 
                 borderColor: '#58a6ff', 
                 borderWidth: 2,
@@ -125,7 +125,7 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: { 
-                    y: { beginAtZero: true, max: 10, grid: { color: '#30363d' } },
+                    y: { beginAtZero: true, max: 100, grid: { color: '#30363d' } },
                     x: { grid: { display: false } }
                 }
             }
